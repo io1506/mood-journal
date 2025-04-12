@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mood Journal & Poetic Diary</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Open+Sans:wght@400;600&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: linear-gradient(135deg, #f6f9fc, #e9eff5);
+      --text: #222;
+      --container-bg: rgba(255, 255, 255, 0.95);
+      --accent: #6a5acd;
+      --border: #ccc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Open Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      transition: background 0.5s ease;
+    }
+
+    .container {
+      width: 95%;
+      max-width: 800px;
+      background: var(--container-bg);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.1);
+      animation: fadeIn 1s ease-in;
+    }
+
+    h1 {
+      font-family: 'Pacifico', cursive;
+      font-size: 2.5rem;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 15px;
+      display: block;
+      font-size: 1.1rem;
+    }
+
+    select {
+      font-family: 'Roboto', sans-serif;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 12px;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 100%;
+      background-color: white;
+      color: var(--text);
+    }
+
+    textarea, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #483d8b;
+    }
+
+    .entry {
+      background: #fff8e1;
+      padding: 15px;
+      margin-top: 20px;
+      border-left: 4px solid #ffc107;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .timestamp {
+      color: gray;
+      font-size: 0.9em;
+      margin-bottom: 5px;
+    }
+
+    .quote-box, .suggestion-box {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f0f8ff;
+      border-left: 5px solid var(--accent);
+      font-style: italic;
+      white-space: pre-wrap;
+      border-radius: 10px;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 2rem; }
+      textarea { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>My Mood & Poetry Diary ✨</h1>
+
+    <label for="theme">Theme</label>
+    <select id="theme" onchange="changeTheme()"></select>
+
+    <label for="mood">Mood</label>
+    <select id="mood" onchange="showSuggestion()"></select>
+
+    <label for="journal">Your Day (with emojis 😊):</label>
+    <textarea id="journal" rows="5" placeholder="Start writing..."></textarea>
+
+    <button onclick="saveEntry()">💾 Save Entry</button>
+
+    <div class="quote-box" id="daily-quote">🌞 Daily Motivation: “Loading...”</div>
+    <div class="suggestion-box" id="mood-suggestion">💡 Mood Tip: “Select a mood to get started!”</div>
+
+    <h2>Previous Entries 📜</h2>
+    <div id="entries"></div>
+  </div>
+
+  <script>
+    const themes = {
+      Blossom: ["linear-gradient(135deg, #ffe0f7, #fcd1e1)", "#4a154b", "#fff"],
+      Ocean: ["linear-gradient(135deg, #d0f4f9, #96e0ef)", "#00334d", "#e0f7fa"],
+      Forest: ["linear-gradient(135deg, #e6f9e5, #c0f2c2)", "#1b5e20", "#e8f5e9"],
+      Midnight: ["#1a1a2e", "#f5f5f5", "#25274d"],
+      Sunset: ["linear-gradient(to right, #ff758c, #ff7eb3)", "#ffffff", "#ffe0b2"],
+      IceMint: ["linear-gradient(135deg, #ccf2f4, #a4ebf3)", "#004d4d", "#e0ffff"],
+      Sand: ["linear-gradient(135deg, #fdf6e3, #fbe8a6)", "#5d4037", "#fffae3"],
+      Lavender: ["linear-gradient(135deg, #e6e6fa, #d8bfd8)", "#4b0082", "#f3e5f5"],
+      Galaxy: ["linear-gradient(135deg, #2c3e50, #4ca1af)", "#ecf0f1", "#34495e"],
+      Peach: ["linear-gradient(135deg, #ffe5b4, #ffc3a0)", "#6e260e", "#fff2e0"]
+    };
+
+    const moods = [
+      "😊 Happy", "😢 Sad", "😰 Anxious", "😠 Angry", "🙏 Grateful",
+      "😴 Tired", "🥱 Bored", "😎 Confident", "🤯 Overwhelmed", "❤️ Loved"
+    ];
+
+    const motivationalQuotes = [
+      "Believe in yourself. You are braver than you think.",
+      "Every day is a new beginning. Take a deep breath and start again.",
+      "You are capable of amazing things.",
+      "Storms make trees take deeper roots.",
+      "Small steps every day lead to big results.",
+      "The comeback is always stronger than the setback.",
+      "Don't just exist, live.",
+      "Let your dreams be bigger than your fears."
+    ];
+
+    const moodSuggestions = {
+      "😊 Happy": "Keep spreading positivity!",
+      "😢 Sad": "It’s okay to feel this way. Tomorrow is a new day.",
+      "😰 Anxious": "Take deep breaths, one step at a time.",
+      "😠 Angry": "Anger is a natural emotion. Try to release it constructively.",
+      "🙏 Grateful": "Hold on to gratitude and keep it in your heart.",
+      "😴 Tired": "Rest is important, take time to recharge.",
+      "🥱 Bored": "Try something new, break the routine.",
+      "😎 Confident": "Own your worth. You’ve got this!",
+      "🤯 Overwhelmed": "Focus on one thing at a time.",
+      "❤️ Loved": "Cherish the love you receive and give it back tenfold."
+    };
+
+    window.onload = () => {
+      loadThemesAndMoods();
+      changeTheme();
+      showQuote();
+      showEntries(); // Display entries on load
+    };
+
+    function loadThemesAndMoods() {
+      const themeSelect = document.getElementById('theme');
+      for (const theme in themes) {
+        let option = document.createElement('option');
+        option.value = theme;
+        option.textContent = theme;
+        themeSelect.appendChild(option);
+      }
+      
+      const moodSelect = document.getElementById('mood');
+      moods.forEach(mood => {
+        let option = document.createElement('option');
+        option.value = mood;
+        option.textContent = mood;
+        moodSelect.appendChild(option);
+      });
+    }
+
+    function changeTheme() {
+      const theme = document.getElementById('theme').value;
+      const [bg, text, containerBg] = themes[theme];
+      document.body.style.background = bg;
+      document.body.style.color = text;
+      document.querySelector('.container').style.background = containerBg;
+    }
+
+    function showQuote() {
+      const quote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+      document.getElementById('daily-quote').textContent = "🌞 Daily Motivation: " + quote;
+    }
+
+    function showSuggestion() {
+      const mood = document.getElementById('mood').value;
+      document.getElementById('mood-suggestion').textContent = "💡 Mood Tip: " + moodSuggestions[mood];
+    }
+
+    async function saveEntry() {
+      const mood = document.getElementById('mood').value;
+      const journal = document.getElementById('journal').value.trim();
+      
+      if (!journal) return alert("Please write something.");
+
+      const timestamp = new Date().toLocaleString();
+      const entry = { mood, journal, timestamp };
+
+      try {
+        const response = await fetch('http://localhost:3000/save-entry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry)
+        });
+
+        const data = await response.json();
+        if (data.message === 'Entry saved successfully!') {
+          alert('Entry saved!');
+          document.getElementById('journal').value = ""; // Clear journal textarea
+          showEntries(); // Reload entries
+        } else {
+          alert('Failed to save entry.');
+        }
+      } catch (error) {
+        console.error('Error saving entry:', error);
+        alert('Something went wrong. Please try again.');
+      }
+    }
+
+    async function showEntries() {
+      const container = document.getElementById('entries');
+      container.innerHTML = "";
+
+      try {
+        const response = await fetch('http://localhost:3000/entries');
+        const data = await response.json();
+
+        data.entries.forEach(({ mood, journal, timestamp }) => {
+          const div = document.createElement("div");
+          div.className = "entry";
+          div.innerHTML = `
+            <div class="timestamp">${timestamp}</div>
+            <div><strong>Mood:</strong> ${mood}</div>
+            <div><strong>Journal:</strong> ${journal}</div>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error('Error loading entries:', error);
+        alert('Could not load entries.');
+      }
+    }
+  </script>
+</body>
+</html>
